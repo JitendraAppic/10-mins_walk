@@ -5,7 +5,6 @@ const service = require("../../service/jwt");
 const addpropity = require("../model/Addproperty").Property;
 var jwt = require("jsonwebtoken");
 const { user } = require("../model/admin");
-// var token = jwt.sign({ foo: 'bar' }, 'shhhhh');
 let userController = {
   UserRegister: (req, res) => {
 
@@ -317,48 +316,7 @@ let userController = {
       }
     });
   },
-  // changeRole: async (req, res) => {
-  //   var data = await userModel.find({ email: req.body.email });
-  //   if (data == null) {
-  //     res.status(201).json({
-  //       msg: "User Not Found",
-  //       status:"true",
-  //     })
-  //   } else {
-  //     userModel.findByIdAndUpdate(
-  //       { _id: data._id },
-  //       { $set: { type: "Agent", Experience: req.body.Experience, Area : req.body.Area, } }
-  //     );
-  //   }
-  // },
-  // Agentstatus: async (req, res) => {
-  //   userModel.find({ email: req.body.email }, (err, data) => {
-  //     if (data == null) {
-  //       res.status(201).json({
-  //         msg: "User Not Found",
-  //         status:true
-  //       })
-  //     } else {
-  //       if (data.AgentStatus == false) {
-  //         userModel.findByIdAndUpdate({ _id: data._id }, { $set: { AgentStatus: true } }, { new: true }, (err, data1) => {
-  //           try {
-  //             res.status(200).json({
-  //               msg: "Agent Approved successfully",
-  //               status: true,
-  //               data:data
-  //             })
-  //           } catch (err) {
-  //             res.status(500).json({
-  //               msg: "No Data Found",
-  //               status:false
-  //             })
-  //           }
-  //         })
-  //       }
 
-  //     }
-  //   })
-  // },
 
   changePassword: async (req, res) => {
     var oldpassword = req.body.oldPassword;
@@ -674,5 +632,6 @@ let userController = {
     //   });
     // }
   },
+  //qqw
 };
 module.exports = userController;
