@@ -8,42 +8,54 @@ const { user } = require("../model/admin");
 // var token = jwt.sign({ foo: 'bar' }, 'shhhhh');
 let userController = {
   UserRegister: (req, res) => {
+
     userModel.findOne({ email: req.body.email }, (err, data) => {
       if (data == null) {
         let password = req.body.password;
         bcrypt.genSalt(10, function (err, salt) {
           bcrypt.hash(password, salt, function (err, hash) {
-            const userdata = new userModel();
-            userdata.Name = req.body.Name;
-            userdata.email = req.body.email;
-            userdata.Area = req.body.Area;
-            userdata.Experience = req.body.Experience;
-            userdata.About = req.body.About;
-            userdata.Upload_id = req.body.Upload_id;
-            userdata.password = hash;
-            userdata.mobile = req.body.mobile;
-            userdata.type = req.body.type;
+            var payload = {
+              Name: req.body.Name,
+              email: req.body.email,
+              Area: req.body.Area,
+              Experience: req.body.Experience,
+              About: req.body.About,
+              password: hash,
+              mobile: req.body.mobile,
+              type: req.body.type,
+            };
+
+            const userdata = new userModel(payload);
             userdata.save((err, data) => {
               // console.log(err, "1212");
-              try {
-                res.status(200).json({
-                  msg: "User Register Successfully",
-                  status: true,
-                  data: data,
-                });
-              } catch (err) {
+              if (data) {
+                try {
+                  res.status(200).json({
+                    msg: "User Register Successfully",
+                    status: true,
+                    data: data,
+                  });
+                } catch (err) {
+                  res.status(500).json({
+                    msg: "NO data Found",
+                    status: false,
+                  });
+                }
+              } else {
                 res.status(500).json({
                   msg: "NO data Found",
                   status: false,
+                  err: err.message,
                 });
               }
             });
           });
         });
       } else {
-        res.status(201).json({
-          msg: "this email already Register",
-          status: true,
+        res.status(500).json({
+          msg: "this user already Register",
+          status: false,
+
         });
       }
     });
@@ -305,6 +317,48 @@ let userController = {
       }
     });
   },
+  // changeRole: async (req, res) => {
+  //   var data = await userModel.find({ email: req.body.email });
+  //   if (data == null) {
+  //     res.status(201).json({
+  //       msg: "User Not Found",
+  //       status:"true",
+  //     })
+  //   } else {
+  //     userModel.findByIdAndUpdate(
+  //       { _id: data._id },
+  //       { $set: { type: "Agent", Experience: req.body.Experience, Area : req.body.Area, } }
+  //     );
+  //   }
+  // },
+  // Agentstatus: async (req, res) => {
+  //   userModel.find({ email: req.body.email }, (err, data) => {
+  //     if (data == null) {
+  //       res.status(201).json({
+  //         msg: "User Not Found",
+  //         status:true
+  //       })
+  //     } else {
+  //       if (data.AgentStatus == false) {
+  //         userModel.findByIdAndUpdate({ _id: data._id }, { $set: { AgentStatus: true } }, { new: true }, (err, data1) => {
+  //           try {
+  //             res.status(200).json({
+  //               msg: "Agent Approved successfully",
+  //               status: true,
+  //               data:data
+  //             })
+  //           } catch (err) {
+  //             res.status(500).json({
+  //               msg: "No Data Found",
+  //               status:false
+  //             })
+  //           }
+  //         })
+  //       }
+
+  //     }
+  //   })
+  // },
 
   changePassword: async (req, res) => {
     var oldpassword = req.body.oldPassword;
@@ -319,10 +373,8 @@ let userController = {
       });
     } else {
       bcrypt.compare(oldpassword, data.password, (err, hash_code) => {
-
         if (hash_code) {
           bcrypt.genSalt(10, function (err, salt) {
-
             bcrypt.hash(newPassword, salt, function (err, hash) {
               userModel.findByIdAndUpdate(
                 id,
@@ -346,17 +398,17 @@ let userController = {
                     res.status(500).josn({
                       msg: "NO data Found",
                       status: false,
-                      err:err.message
-                    })
+                      err: err.message,
+                    });
                   }
                 }
               );
             });
           });
         } else {
-           return res.status(200).json({
-             message: "incorrect old password data",
-           });
+          return res.status(200).json({
+            message: "incorrect old password data",
+          });
         }
       });
     }
@@ -539,8 +591,9 @@ let userController = {
     try {
       var lat = req.body.lat;
       var log = req.body.log;
-      var minPrice = req.body.minPrice;
-      var maxPrice = req.body.maxPrice;
+
+      var newArea = req.body.Area;
+      let newPrice = req.body.Price;
       addpropity.aggregate(
         [
           {
@@ -554,10 +607,16 @@ let userController = {
               spherical: true,
             },
           },
-          { $match: { Area: req.body.Area } },
+          {
+            $match: { Area: { $gte: newArea.minArea, $lte: newArea.maxArea } },
+          },
           { $match: { Residential: req.body.Residential } },
           { $match: { PropertyType: req.body.PropertyType } },
-          { $match: { Price: { $gte: minPrice, $lte: maxPrice } } },
+          {
+            $match: {
+              Price: { $gte: newPrice.minPrice, $lte: newPrice.maxPrice },
+            },
+          },
         ],
         // [
         // {
