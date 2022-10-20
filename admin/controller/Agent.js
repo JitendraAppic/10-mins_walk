@@ -2,7 +2,7 @@ const AgentModel = require("../model/admin").user
 const favoriteProperty = require("../model/Addproperty").favorite_property;
 let AgentController = {
     AddProfile: async(req, res) => {
-        const { Name, mobile,agentid } = req.body;
+        const { Name, mobile,id } = req.body;
         if (req.file) {
 
             var image = req.file.path;
@@ -18,7 +18,7 @@ let AgentController = {
               image: req.body.image,
             };
         }
-        let AgentID = { _id: agentid };
+        let AgentID = { _id: id };
         let query = {$set:payload}
         var data = await AgentModel.findByIdAndUpdate(AgentID, query, { new: true });
         try {

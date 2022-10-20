@@ -50,7 +50,8 @@ router.delete("/DeleteProperty", auth.adminAuthAuthenticated, userdata.DeletePro
 router.put("/UpdataProperty",auth.adminAuthAuthenticated,upload.array('image'), userdata.updateProperty)
 router.get("/findproperty", userdata.findproperty);
 
-//agent routes
-router.post("/Profile",auth.adminAuthAuthenticated,profile.single('image'), AgentController.AddProfile);
-router.post("/favorite_property", AgentController.favorite_property);
+//Assine Property
+router.post("/assineProperty", auth.adminAuthAuthenticated, admin.assineProperty);
+
+// router.post("/favorite_property", userdata.favorite_property);
 module.exports = router;

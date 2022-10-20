@@ -3,26 +3,43 @@ const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 const service = require("../../service/jwt");
 const addpropity = require("../model/Addproperty").Property;
+const userSave_propertyModel = require("../model/Addproperty").userSave_property;
 var jwt = require("jsonwebtoken");
 const { user } = require("../model/admin");
 let userController = {
   UserRegister: (req, res) => {
+    userModel.find({ email: req.body.email }, (err, data) => {
 
-    userModel.findOne({ email: req.body.email }, (err, data) => {
-      if (data == null) {
+      if (data == "") {
         let password = req.body.password;
         bcrypt.genSalt(10, function (err, salt) {
           bcrypt.hash(password, salt, function (err, hash) {
-            var payload = {
-              Name: req.body.Name,
-              email: req.body.email,
-              Area: req.body.Area,
-              Experience: req.body.Experience,
-              About: req.body.About,
-              password: hash,
-              mobile: req.body.mobile,
-              type: req.body.type,
-            };
+            if (req.file) {
+              let Upload_id = req.file.filename;
+              var payload = {
+                Name: req.body.Name,
+                email: req.body.email,
+                Area: req.body.Area,
+                Experience: req.body.Experience,
+                About: req.body.About,
+                password: hash,
+                mobile: req.body.mobile,
+                type: req.body.type,
+                Upload_id: Upload_id,
+              };
+
+            } else {
+                var payload = {
+                  Name: req.body.Name,
+                  email: req.body.email,
+                  Area: req.body.Area,
+                  Experience: req.body.Experience,
+                  About: req.body.About,
+                  password: hash,
+                  mobile: req.body.mobile,
+                  type: req.body.type,
+                };
+            }
 
             const userdata = new userModel(payload);
             userdata.save((err, data) => {
@@ -30,7 +47,7 @@ let userController = {
               if (data) {
                 try {
                   res.status(200).json({
-                    msg: "User Register Successfully",
+                    msg: "Register Successfully",
                     status: true,
                     data: data,
                   });
@@ -52,7 +69,7 @@ let userController = {
         });
       } else {
         res.status(500).json({
-          msg: "this user already Register",
+          msg: "this email already Register",
           status: false,
 
         });
@@ -375,11 +392,9 @@ let userController = {
   //Admin add Property
   addproperty: async (req, res) => {
     const {
-      PropertyType,
       Residential,
       Area,
       Price,
-      Beds_Baths,
       Description,
       location,
       email,
@@ -392,7 +407,11 @@ let userController = {
         image.push(value.path);
       });
       var payload = {
-        PropertyType: PropertyType,
+        PropertyType: {
+          Purpose: req.body.Purpose,
+          Rent_Frequency: req.body.Rent_Frequency,
+          Completion_Status: req.body.Completion_Status,
+        },
         Residential: Residential,
         Area: Area,
         email: email,
@@ -401,16 +420,27 @@ let userController = {
         Agent_id: Agent_id,
         location: location,
         Description: Description,
-        Beds_Baths: Beds_Baths,
         loc: {
           type: req.body.type,
           coordinates: req.body.coordinates,
+        },
+        Beds_Baths: {
+          Beds: req.body.Beds,
+          Baths: req.body.Baths,
         },
         image: image,
       };
     } else {
       var payload = {
-        PropertyType: PropertyType,
+        PropertyType: {
+          Purpose: req.body.Purpose,
+          Rent_Frequency: req.body.Rent_Frequency,
+          Completion_Status: req.body.Completion_Status,
+        },
+        Beds_Baths: {
+          Beds: req.body.Beds,
+          Baths: req.body.Baths,
+        },
         Residential: Residential,
         Area: Area,
         Price: Price,
@@ -418,7 +448,6 @@ let userController = {
         mobile: mobile,
         Agent_id: Agent_id,
         Description: Description,
-        Beds_Baths: Beds_Baths,
         location: location,
         loc: {
           type: req.body.type,
@@ -632,6 +661,91 @@ let userController = {
     //   });
     // }
   },
-  //qqw
+
+  //save_search
+  saveProperty: async (req, res) => {
+      try {
+        var lat = req.body.lat;
+        var log = req.body.log;
+
+        var newArea = req.body.Area;
+        let newPrice = req.body.Price;
+        let data = await addpropity.aggregate([
+          {
+            $geoNear: {
+              near: {
+                type: "Point",
+                coordinates: [Number(log), Number(lat)],
+              },
+              maxDistance: parseFloat(1000) * 1609,
+              distanceField: "dist.calculated",
+              spherical: true,
+            },
+          },
+          {
+            $match: {
+              Area: { $gte: newArea.minArea, $lte: newArea.maxArea },
+            },
+          },
+          { $match: { Residential: req.body.Residential } },
+          { $match: { PropertyType: req.body.PropertyType } },
+          {
+            $match: {
+              Price: { $gte: newPrice.minPrice, $lte: newPrice.maxPrice },
+            },
+          },
+        ]);
+        if (data == null) {
+          res.status(201).json({
+            msg: "No Data found",
+            status:true
+          })
+        } else {
+
+          for (var newdata of data) {
+            let payload = {
+              userid: req.body.userid,
+              propertyid: newdata._id,
+              Name: req.body.Name,
+            };
+            let alldata = await userSave_propertyModel.insertMany(payload);
+          }
+          try {
+               res.status(200).json({
+                 msg: "Save data Successfully",
+                 status: true,
+               });
+          } catch (err) {
+            res.status(400).json({
+              msg: "NO data Found",
+              status:false
+            })
+          }
+        }
+
+      } catch (err) {
+        res.status(400).json({
+          msg: "NO data Found",
+          status: false,
+          err: err.message,
+        });
+      }
+  },
+  getSaveProperty: async (req, res) => {
+    let data = await userSave_propertyModel.find({ userid: req.query.userid });
+    try {
+      res.status(200).json({
+        msg: "GET Property Successfully",
+        status: true,
+        data:data
+      })
+    } catch (err) {
+      res.status(500).json({
+        msg: "NO data Found",
+        status:false
+      })
+    }
+  },
+
 };
 module.exports = userController;

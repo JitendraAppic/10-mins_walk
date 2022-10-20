@@ -9,10 +9,11 @@ app.use(cors());
 //router
 var routerdata = require("./admin/router/index");
 var userRouter = require("./admin/router/user");
+let AgentRouter = require("./admin/router/Agent");
 app.use("/admin/", routerdata);
 
-
-
+app.use("/user/", userRouter);
+app.use("/Agent/", AgentRouter);
 
 app.listen(8701, () => {
   console.log("port runing 8701");

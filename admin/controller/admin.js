@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const service = require("../../service/jwt");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
+let PropertyModel = require("../model/Addproperty").userSave_property
 let AdminController = {
   AdminSignup: async (req, res) => {
     const { Name, email, password } = req.body;
@@ -147,8 +148,24 @@ let AdminController = {
         })
 
   },
+  assineProperty: async (req, res) => {
+    let data = await PropertyModel.findByIdAndUpdate({ _id: req.body.id },{ $set: { Agent_id : req.body.Agentid} },{new:true});
+    try {
+      res.status(200).json({
+        msg: "Assine Property for Agent",
+        status: true,
+        data:data
+       })
+    } catch (err) {
+      res.status(400).json({
+        msg: "NO data Found ",
+        status:false
+      })
+     }
 
-    
+
+  },
+
 };
 
 
